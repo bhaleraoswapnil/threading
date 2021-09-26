@@ -6,9 +6,19 @@
 //
 
 #include <iostream>
+#include <thread>
 
-int main(int argc, const char * argv[]) {
+using namespace std;
+void fun()
+{
+    cout << "child thread ..." << std::this_thread::get_id() << endl;
+}
+int main(int argc, const char *argv[])
+{
     // insert code here...
-    std::cout << "Hello, World!\n";
+    std::cout << "main thread  ...";
+    std::cout << std::this_thread::get_id() << endl;
+    thread t1(fun);
+    t1.join();
     return 0;
 }
