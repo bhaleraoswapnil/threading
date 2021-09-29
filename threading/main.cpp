@@ -4,67 +4,52 @@
 //
 //  Created by Swapnil Bhalerao on 23/09/21.
 //
-//  Big Array sum using multiple threads.
-//  Each thread should handle min 1000 array fields.
+//  use of lock_guard() and unique_lock()
+//
 
 #include <iostream>
 #include <thread>
 #include <vector>
 #include <mutex>
 using namespace std;
-std::mutex mu;
-#define ARRAY_SIZE 10000
-int sum_array[ARRAY_SIZE] = {0};
-
-int sum_fun(int start_index, int _size)
+std::mutex mu_1;
+std::mutex mu_2;
+int global_count = 0;
+void increase_count()
 {
+    cout << "print from increase_count()\n";
 
-    int subset_sum = 0;
-    for (int i = start_index; i < start_index + _size; i++)
-    {
-        subset_sum = subset_sum + sum_array[i];
-    }
-    mu.lock();
-    cout << "Thread ID == " << std::this_thread::get_id() << " " << start_index << " " << _size << endl;
-    cout << "subset sum == " << subset_sum << endl;
-    mu.unlock();
+    std::lock_guard<std::mutex> lg(mu_1); // This will lock mutex and unlock after outof scope.
+    global_count++;
+}
 
-    return subset_sum;
+void decrease_count()
+{
+    cout << "print from decrease_count()\n";
+
+    std::unique_lock<std::mutex> ul(mu_2); // Multiple time we can lock and unlock
+    global_count--;
+
+    //    ul.lock();
+    //    do operation
+    //    ul.unlock();
 }
 
 int main(int argc, const char *argv[])
 {
     // insert code here...
 
-    for (int i = 0; i < ARRAY_SIZE; i++)
+    std::thread T1(increase_count);
+    std::thread T2(decrease_count);
+
+    if (T1.joinable())
     {
-        sum_array[i] = 2;
+        T1.join();
     }
 
-    // check how many Thread required to perform sum.
-    int no_of_thread_supported_system = std::thread::hardware_concurrency();
-    int each_thread_to_process = ARRAY_SIZE / no_of_thread_supported_system;
-
-    int start_index = 0;
-    std::thread *ptr;
-    ptr = new std::thread[no_of_thread_supported_system];
-
-    for (int i = 0; i < no_of_thread_supported_system; i++)
+    if (T2.joinable())
     {
-        std::thread thread_obj(sum_fun, start_index, each_thread_to_process);
-        start_index = start_index + each_thread_to_process;
-
-        ptr[i] = std::move(thread_obj);
+        T2.join();
     }
-
-    for (int i = 0; i < no_of_thread_supported_system; i++)
-    {
-        if (ptr[i].joinable())
-        {
-            ptr[i].join();
-        }
-    }
-    delete[] ptr;
-
     return 0;
 }
